@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Summon Session — Gestionnaire de bibliothèque AutoCAD par invocation mnémonique">
+  <title>Summon Session</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <meta name="theme-color" content="#0a0a0f">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔮</text></svg>">
+  <link rel="stylesheet" href="style.css?v=2">
+</head>
+<body>
+  <div class="l-grid">
+    <header id="app-header" class="l-header surface-glass">
+      <div class="header-main">
+        <h1 class="font-heading">Summon Studio</h1>
+        <p class="font-subtext">Minimalist Management Platform</p>
+      </div>
+      <div class="header-actions">
+        <div id="sync-indicator" class="sync-indicator" title="Modifications en attente d'export">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+        </div>
+        <button id="export-lsp-btn" class="btn-primary btn-export" title="Exporter le fichier .lsp mis à jour">
+          <span>Exporter le LISP</span>
+        </button>
+      </div>
+    </header>
+
+    <main data-view="library" class="l-main">
+
+    <!-- ── Toolbar Compact (Drop + Stats) ─────────────────────────────── -->
+    <section class="l-toolbar" aria-label="Zone d'import et Statistiques">
+      <div id="drop-zone" class="drop-zone-compact surface-glass" role="region" aria-dropeffect="copy">
+        <div class="drop-zone-compact__content">
+          <svg class="icon icon-upload" width="20" height="20" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+          <span class="drop-label">Glisser config <code style="color:var(--accent-cyan);">> .lsp</code> ou </span>
+          <label class="drop-action" for="file-input">Parcourir...</label>
+          <input id="file-input" type="file" accept=".lsp" class="sr-only">
+        </div>
+        <div id="drop-feedback" class="drop-feedback-compact"></div>
+      </div>
+
+      <div id="dashboard" class="stats-compact" hidden>
+        <div class="stat-pill">
+          <span class="stat-label">Blocs</span>
+          <span class="stat-value font-mono" id="dash-total-blocks">0</span>
+        </div>
+        <div class="stat-pill">
+          <span class="stat-label">Fichiers</span>
+          <span class="stat-value font-mono" id="dash-total-files">0</span>
+        </div>
+      </div>
+    </section>
+    <!-- ────────────────────────────────────────────────────────────────── -->
+
+    <section id="omni-summon" class="l-section" role="search">
+      <div class="omni-bar surface-glass">
+        <span class="omni-bar__icon" aria-hidden="true">
+          <svg class="icon"><use href="#icon-search"/></svg>
+        </span>
+        <input id="omni-input" type="search" class="omni-bar__input" placeholder="Rechercher un bloc..." aria-label="Rechercher un bloc AutoCAD">
+        <button id="btn-add-block" class="btn-icon" title="Créer un nouveau bloc de zéro">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+      </div>
+    </section>
+
+
+    <section id="view-library" class="l-section">
+      <!-- Vue bibliothèque (Story 3.1+) -->
+      
+      <!-- En-têtes de la liste -->
+      <div class="list-header" aria-hidden="true" style="display:none;" id="library-header">
+        <div class="col-cmd">Raccourci</div>
+        <div class="col-name">Nom de Bloc</div>
+        <div class="col-source">Fichier dwg / Source</div>
+        <div class="col-layer">Calque</div>
+        <div class="col-scale">Échelle</div>
+      </div>
+
+      <div id="library-container" class="l-list-container">
+      </div>
+    </section>
+
+    <section id="view-edit" hidden>
+      <!-- Vue édition (Story 3.4) -->
+      <div class="modal-overlay">
+        <div class="modal-content surface-glass">
+          <header class="modal-header">
+            <h2 class="font-heading">Configurer le Bloc</h2>
+            <button type="button" class="btn-close" id="btn-close-edit" aria-label="Fermer la vue édition">×</button>
+          </header>
+          
+          <form id="block-edit-form" class="l-modal-form">
+            <div class="form-group">
+              <label for="edit-name" class="font-subtext">Nom du bloc (Description UI)</label>
+              <input type="text" id="edit-name" name="name" class="form-input" placeholder="Ex: Mobilier de Bureau" required>
+            </div>
+            
+            <div class="form-group">
+              <label for="edit-lib-path" class="font-subtext">Source AutoCAD (Chemin DWG ou Nom de bloc natif)</label>
+              <input type="text" id="edit-lib-path" name="lib_path" class="form-input" placeholder="Ex: c:/mes_blocs/fauteuil.dwg ou FAUTEUIL_X" required>
+            </div>
+            
+            <div class="form-group">
+              <label for="edit-block-name" class="font-subtext">Nom du bloc à extraire (Optionnel)</label>
+              <input type="text" id="edit-block-name" name="block_name" class="form-input" placeholder="Laisser vide si le fichier LUI-MÊME est le bloc">
+              <small class="font-subtext" style="opacity: 0.7; display: block; margin-top: 0.25rem;">Utile si la source est un fichier DWG contenant plusieurs blocs.</small>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label for="edit-id" class="font-subtext">Raccourci d'invocation</label>
+                <input type="text" id="edit-id" name="id" class="form-input font-mono" placeholder="Ex: MB" required maxlength="5">
+                <div id="shortcut-suggestions" class="suggestion-pills"></div>
+              </div>
+              
+              <div class="form-group">
+                <label for="edit-scale" class="font-subtext">Échelle (Scale)</label>
+                <input type="number" id="edit-scale" name="scale" class="form-input" step="0.01" value="1.0" required>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="edit-layer" class="font-subtext">Calque cible (Layer)</label>
+              <input type="text" id="edit-layer" name="layer" class="form-input" placeholder="0" required>
+            </div>
+
+            <footer class="modal-footer" style="display:flex; gap:1rem; flex-wrap:wrap;">
+              <button type="submit" class="btn-primary" style="flex:1;">Enregistrer les modifications</button>
+              <button type="button" id="btn-delete-block" class="btn-danger" style="flex:1;" hidden>Supprimer ce bloc</button>
+            </footer>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-export" hidden>
+      <!-- Vue export (Story 3.5) -->
+    </section>
+
+    <!-- Welcome Popup -->
+    <div id="welcome-popup" class="modal-overlay" hidden>
+      <div class="modal-content surface-glass" style="max-width: 450px; text-align: center; position: relative;">
+        <button type="button" class="btn-close" id="btn-close-welcome" aria-label="Fermer la notification" style="position: absolute; top: var(--space-md); right: var(--space-md);">×</button>
+        <div style="padding: var(--space-xl); padding-top: 3rem;">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">🔮</div>
+          <h3 class="font-heading" style="font-size:1.5rem; margin-bottom:0.5rem; color:#FFF;">Toute magie a un commencement.</h3>
+          <p class="font-subtext" style="font-size: 1rem; margin-bottom: 1.5rem;">Glissez un fichier config LISP existant ci-dessus, ou créez votre premier bloc de zéro.</p>
+          <button type="button" class="btn-primary" id="btn-welcome-ok">D'accord, c'est parti</button>
+        </div>
+      </div>
+    </div>
+  </main>
+  </div>
+
+  <footer class="app-footer">
+    <div class="footer-links">
+      <a href="https://www.linkedin.com/in/hugo-burnet-a11323309/" target="_blank" rel="noopener" class="footer-link" aria-label="LinkedIn">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+      </a>
+      <a href="https://github.com/hugo-burnet" target="_blank" rel="noopener" class="footer-link" aria-label="GitHub">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+      </a>
+      <a href="https://hugo-burnet.github.io/cv-online/" target="_blank" rel="noopener" class="footer-link" aria-label="CV Online">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      </a>
+    </div>
+  </footer>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
