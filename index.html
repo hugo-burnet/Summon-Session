@@ -127,9 +127,23 @@
               </div>
             </div>
 
-            <div class="form-group">
-              <label for="edit-layer" class="font-subtext">Calque cible (Layer)</label>
-              <input type="text" id="edit-layer" name="layer" class="form-input" placeholder="0" required>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="edit-layer" class="font-subtext">Calque cible (Layer)</label>
+                <input type="text" id="edit-layer" name="layer" class="form-input" placeholder="0" required>
+              </div>
+              <div class="form-group">
+                <label for="edit-color" class="font-subtext">Couleur ACI (0-256)</label>
+                <div class="input-with-action">
+                  <input type="number" id="edit-color" name="color" class="form-input" min="0" max="256" step="1" value="7">
+                  <button type="button" id="btn-color-picker" class="btn-input-action" title="Choisir parmi les couleurs standard">
+                    <svg class="icon"><use href="#icon-palette"/></svg>
+                  </button>
+                  <div id="aci-picker-popover" class="aci-picker surface-glass" hidden>
+                    <!-- Les couleurs seront générées en JS -->
+                  </div>
+                </div>
+              </div>
             </div>
 
             <footer class="modal-footer" style="display:flex; gap:1rem; flex-wrap:wrap;">

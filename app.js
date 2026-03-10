@@ -19,6 +19,32 @@ const omniInput = document.getElementById('omni-input');
 // [Story 1.5] Gestionnaire de timeout pour éviter les chevauchements de feedback
 let feedbackTimeout = null;
 
+// Mapping simplifié des couleurs ACI (AutoCAD Color Index) vers CSS
+const ACI_TO_CSS = {
+  0: '#FFFFFF', // ByLayer (Défaut Blanc)
+  1: '#FF0000', // Red
+  2: '#FFFF00', // Yellow
+  3: '#00FF00', // Green
+  4: '#00FFFF', // Cyan
+  5: '#0000FF', // Blue
+  6: '#FF00FF', // Magenta
+  7: '#FFFFFF', // White
+  8: '#808080', // Dark Gray
+  9: '#C0C0C0', // Light Gray
+  256: '#FFFFFF' // ByLayer
+};
+
+/**
+ * Retourne une couleur CSS pour un index ACI
+ * @param {number} aci 
+ * @returns {string}
+ */
+function getACIColor(aci) {
+  if (ACI_TO_CSS[aci]) return ACI_TO_CSS[aci];
+  // Pour les autres couleurs, on peut soit utiliser une palette complète soit une couleur neutre
+  return '#9BA3B5'; 
+}
+
 if (dropZone && fileInput) {
   _initDragAndDrop();
 } else {
@@ -225,6 +251,9 @@ function _initIcons() {
     <symbol id="icon-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
     </symbol>
+    <symbol id="icon-palette" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.607-.482 1.926-1.074.319-.592.544-1.361.544-2.104 0-1.5 1-2.5 2.5-2.5H20c1.1 0 2-.9 2-2 0-5.5-4.5-10-10-10z"/>
+    </symbol>
   `;
   document.body.appendChild(sprite);
 }
@@ -325,13 +354,18 @@ function _updateCardContent(card, block, sharedTakenIds) {
     taken.add(shortcut.toUpperCase());
   }
 
+  const dotColor = getACIColor(block.color !== undefined ? block.color : 7);
+
   card.innerHTML = `
     <div class="col-cmd">
       <span class="cmd-pill" aria-label="Raccourci: ${escapeHTML(shortcut)}">${escapeHTML(shortcut)}</span>
     </div>
     <div class="col-name" title="${escapeHTML(blockName)}">${escapeHTML(blockName)}</div>
     <div class="col-source" title="${escapeHTML(filePath)}">${escapeHTML(filePath)}</div>
-    <div class="col-layer" title="Calque: ${escapeHTML(block.layer || '0')}">${escapeHTML(block.layer || '0')}</div>
+    <div class="col-layer" title="Calque: ${escapeHTML(block.layer || '0')} (Coul: ${block.color || 7})">
+      <span class="layer-color-dot" style="background-color: ${dotColor}"></span>
+      ${escapeHTML(block.layer || '0')}
+    </div>
     <div class="col-scale" title="Échelle: ${escapeHTML(scale)}">${escapeHTML(scale)}</div>
   `;
 }
@@ -467,6 +501,11 @@ function _initEditView() {
   const btnClose = document.getElementById('btn-close-edit');
   const editName = document.getElementById('edit-name');
   const editId = document.getElementById('edit-id');
+  const editLayer = document.getElementById('edit-layer');
+  const editColor = document.getElementById('edit-color');
+  const editScale = document.getElementById('edit-scale');
+  
+  _initACIPicker();
 
   if (!viewEdit || !editForm) return;
 
@@ -498,7 +537,6 @@ function _initEditView() {
   });
 
   // Validation du Calque
-  const editLayer = document.getElementById('edit-layer');
   editLayer.addEventListener('input', () => {
     if (ILLEGAL_LAYER_CHARS.test(editLayer.value)) {
       editLayer.classList.add('is-invalid');
@@ -508,13 +546,22 @@ function _initEditView() {
   });
   
   // Validation de l'Échelle
-  const editScale = document.getElementById('edit-scale');
   editScale.addEventListener('input', () => {
     const val = parseFloat(editScale.value);
     if (!isNaN(val) && val > 0) {
       editScale.classList.remove('is-invalid');
     } else {
       editScale.classList.add('is-invalid');
+    }
+  });
+
+  // Validation de la couleur
+  editColor.addEventListener('input', () => {
+    const val = parseInt(editColor.value);
+    if (!isNaN(val) && val >= 0 && val <= 256) {
+      editColor.classList.remove('is-invalid');
+    } else {
+      editColor.classList.add('is-invalid');
     }
   });
 
@@ -527,6 +574,7 @@ function _initEditView() {
     
     // Check validation states before applying
     if (editLayer.classList.contains('is-invalid')) return;
+    if (editColor.classList.contains('is-invalid')) return;
     if (editScale.classList.contains('is-invalid') || parseFloat(editScale.value) <= 0) {
       editScale.classList.add('is-invalid');
       return;
@@ -557,6 +605,7 @@ function _initEditView() {
       name: formData.get('name'),
       scale: parseFloat(formData.get('scale')) || 1.0,
       layer: formData.get('layer') || '0',
+      color: parseInt(formData.get('color')) || 7,
       lib_path: formData.get('lib_path') || '',
       block_name: formData.get('block_name') || '',
       command: newId // La commande AutoCAD est liée au raccourci
@@ -599,6 +648,52 @@ function _initEditView() {
   console.log('[Summon] Vue édition initialisée.');
 }
 
+/**
+ * Initialise le popover de sélection de couleur ACI.
+ */
+function _initACIPicker() {
+  const btnPicker = document.getElementById('btn-color-picker');
+  const popover = document.getElementById('aci-picker-popover');
+  const editColor = document.getElementById('edit-color');
+  if (!btnPicker || !popover || !editColor) return;
+
+  // Générer les swatches pour les couleurs standard 1-9 + 256
+  const colorsToShow = [1, 2, 3, 4, 5, 6, 7, 8, 9, 256];
+  const colorNames = {
+    1: 'Rouge', 2: 'Jaune', 3: 'Vert', 4: 'Cyan', 5: 'Bleu',
+    6: 'Magenta', 7: 'Blanc/Noir', 8: 'Gris Foncé', 9: 'Gris Clair', 256: 'ByLayer'
+  };
+
+  popover.innerHTML = '';
+  colorsToShow.forEach(aci => {
+    const swatch = document.createElement('div');
+    swatch.className = 'aci-swatch';
+    swatch.style.backgroundColor = getACIColor(aci);
+    swatch.dataset.tooltip = `${colorNames[aci] || aci} (ACI ${aci})`;
+    swatch.dataset.aci = aci;
+    
+    swatch.addEventListener('click', (e) => {
+      e.stopPropagation();
+      editColor.value = aci;
+      editColor.dispatchEvent(new Event('input')); // Déclencher validation
+      popover.hidden = true;
+    });
+    popover.appendChild(swatch);
+  });
+
+  btnPicker.addEventListener('click', (e) => {
+    e.stopPropagation();
+    popover.hidden = !popover.hidden;
+  });
+
+  // Fermer le popover si on clique ailleurs
+  document.addEventListener('click', (e) => {
+    if (!popover.contains(e.target) && e.target !== btnPicker) {
+      popover.hidden = true;
+    }
+  });
+}
+
 let lastFocusedElement = null;
 
 /**
@@ -638,6 +733,7 @@ function _openEditView(block, triggerElement = null) {
   document.getElementById('edit-id').value = blockId;
   document.getElementById('edit-scale').value = block.scale || 1.0;
   document.getElementById('edit-layer').value = block.layer || '0';
+  document.getElementById('edit-color').value = (block.color !== undefined) ? block.color : 7;
   document.getElementById('edit-lib-path').value = block.lib_path || '';
   document.getElementById('edit-block-name').value = block.block_name || '';
 
