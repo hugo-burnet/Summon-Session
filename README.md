@@ -55,19 +55,10 @@ Accédez au studio pour gérer vos bibliothèques (Hébergé sur GitHub Pages) :
 ### 2️⃣ Déploiement dans AutoCAD / ZWCAD
 Pour que l'invocation fonctionne, votre logiciel de CAO doit savoir où trouver vos fichiers DWG sources.
 
-1. Extrayez le fichier généré `summon-session.lsp` dans un dossier permanent.
-2. Ouvrez AutoCAD, tapez `OPTIONS`.
-3. Allez dans **Fichiers** → **Chemin de recherche des fichiers de support**.
-4. Ajoutez le dossier contenant `summon-session.lsp` et vos fichiers source.
-
-**Chargement automatique (Recommandé) :**
-Éditez ou créez un fichier `acaddoc.lsp` dans vos dossiers de support, puis ajoutez simplement :
-```lisp
-(load "summon-session.lsp")
-```
-_Chaque nouveau dessin ouvert comportera alors par magie tous vos raccourcis._
-
----
+1. Faites un drag n drop du fichier généré `summon-session.lsp` dans un dossier permanent.
+2. Ouvrez AutoCAD, tapez `APPLOAD`.
+3. Cliquez sur **Ajouter**.
+4. Ajoutez le fichier au démarrage apres l'avoir chargé.
 
 ## 🛡️ Sécurité & Résilience AutoLISP
 
