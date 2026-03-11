@@ -274,11 +274,13 @@ function _initOmniSearch() {
     }, 150); // Debounce court pour conserver le temps réel sans saturer le main thread
   });
 
-  // Focus automatique au démarrage (AC5)
-  // On attend une frame pour s'assurer que le DOM est stable
-  requestAnimationFrame(() => {
-    omniInput.focus();
-  });
+  // Focus automatique au démarrage — desktop uniquement (AC5)
+  // Sur mobile, l'auto-focus ouvre le clavier et masque le contenu
+  if (window.matchMedia('(hover: hover)').matches) {
+    requestAnimationFrame(() => {
+      omniInput.focus();
+    });
+  }
 
   const btnAddBlock = document.getElementById('btn-add-block');
   if (btnAddBlock) {
@@ -751,7 +753,11 @@ function _openEditView(block, triggerElement = null) {
 
   // Afficher la vue
   viewEdit.hidden = false;
-  document.getElementById('edit-name').focus();
+  // Sur mobile, ne pas auto-focaliser : le clavier iOS déclenché pendant
+  // l'animation bottom-sheet pousse la modal hors du viewport visible.
+  if (window.matchMedia('(hover: hover)').matches) {
+    document.getElementById('edit-name').focus();
+  }
 }
 
 /**

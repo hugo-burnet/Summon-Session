@@ -212,6 +212,13 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden; /* empêche le SVG sans taille de déborder */
+  flex-shrink: 0;
+}
+.btn-icon svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
 }
 .btn-icon:hover {
   border-color: var(--accent-cyan);
@@ -768,4 +775,275 @@ button {
 /* Hide elements with hidden attribute */
 [hidden] {
   display: none !important;
+}
+
+/* ── 13. FAB — Créer un bloc (PC + Mobile) ───────────────────────────── */
+.fab-add-wrap {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-lg) 0 var(--space-md);
+}
+
+.btn-fab {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  color: #000;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+  box-shadow: 0 4px 24px rgba(0, 240, 255, 0.30), 0 2px 8px rgba(0, 0, 0, 0.5);
+  transition: all var(--transition-normal) ease;
+}
+.btn-fab svg {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+.btn-fab:hover {
+  box-shadow: 0 6px 32px rgba(0, 240, 255, 0.50), 0 2px 8px rgba(0, 0, 0, 0.5);
+  transform: translateY(-2px) scale(1.06);
+}
+.btn-fab:active {
+  transform: scale(0.91);
+  box-shadow: 0 2px 10px rgba(0, 240, 255, 0.20);
+}
+
+/* ── 14. Responsive — Mobile ──────────────────────────────────────────── */
+
+/* Touch : désactiver le délai 300ms et les hover collants */
+button, [role="button"] {
+  touch-action: manipulation;
+}
+
+@media (hover: none) {
+  .summon-list-item:hover,
+  .summon-list-item:focus-visible {
+    transform: none;
+    border-color: var(--border-subtle);
+    box-shadow: none;
+  }
+  .summon-list-item:active {
+    background: var(--bg-surface-hover);
+    border-color: rgba(0, 240, 255, 0.4);
+    box-shadow: -4px 0 0 var(--accent-cyan);
+  }
+  .btn-primary:hover,
+  .footer-link:hover {
+    transform: none;
+  }
+}
+
+/* ── Tablette (≤ 900px) ───────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .list-header,
+  .summon-list-item {
+    grid-template-columns: 80px minmax(100px, 2fr) minmax(80px, 2fr) 140px 65px;
+  }
+}
+
+/* ── Mobile (≤ 640px) ─────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+
+  /* Layout principal */
+  .l-main {
+    padding: var(--space-md);
+    gap: var(--space-md);
+  }
+
+  /* ── Header ─── */
+  .l-header {
+    padding: var(--space-sm) var(--space-md);
+    gap: var(--space-sm);
+  }
+  .header-main h1 {
+    font-size: 1.1rem;
+  }
+  .header-main .font-subtext {
+    display: none;
+  }
+  .header-actions {
+    gap: var(--space-sm);
+  }
+  .btn-export {
+    padding: var(--space-sm) var(--space-md);
+    font-size: 0.75rem;
+    letter-spacing: 0;
+  }
+
+  /* ── Toolbar (drop zone + stats) ─── */
+  .l-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-sm);
+    padding: var(--space-sm);
+  }
+  .drop-zone-compact__content {
+    flex-wrap: wrap;
+    justify-content: center;
+    text-align: center;
+    gap: var(--space-xs);
+  }
+  .stats-compact {
+    border-left: none;
+    border-top: 1px solid var(--border-subtle);
+    padding-left: 0;
+    padding-top: var(--space-sm);
+    justify-content: space-around;
+  }
+
+  /* ── Omni-bar : pleine largeur ─── */
+  .omni-bar__input {
+    font-size: 16px; /* empêche le zoom auto iOS */
+  }
+
+  /* ── Bibliothèque : layout 2 lignes ─── */
+  #library-header {
+    display: none !important;
+  }
+  .summon-list-item {
+    display: grid;
+    grid-template-columns: 68px 1fr auto;
+    grid-template-rows: auto auto;
+    grid-template-areas:
+      "cmd name  scale"
+      "cmd source layer";
+    gap: 2px var(--space-sm);
+    padding: 10px var(--space-sm);
+    min-height: 54px;
+  }
+  .col-cmd {
+    grid-area: cmd;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-right: var(--space-xs);
+  }
+  .col-name {
+    grid-area: name;
+    font-size: 0.875rem;
+    align-self: end;
+    padding-bottom: 2px;
+  }
+  .col-source {
+    grid-area: source;
+    font-size: 0.7rem;
+    align-self: start;
+    padding-top: 2px;
+    color: var(--text-muted);
+  }
+  .col-layer {
+    grid-area: layer;
+    font-size: 0.7rem;
+    align-self: start;
+    padding-top: 2px;
+    justify-content: flex-end;
+    color: var(--text-muted);
+  }
+  .col-scale {
+    grid-area: scale;
+    font-size: 0.75rem;
+    align-self: end;
+    text-align: right;
+    padding-bottom: 2px;
+  }
+  .cmd-pill {
+    min-width: 48px;
+    font-size: 0.75rem;
+    padding: 3px 6px;
+  }
+
+  /* ── Modal édition : bottom sheet ─── */
+  #view-edit .modal-overlay {
+    padding: 0;
+    align-items: flex-end;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+  #view-edit .modal-content {
+    max-width: 100%;
+    max-height: 92vh;
+    max-height: 92dvh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    animation: slideUpSheet var(--transition-normal) cubic-bezier(0.2, 0, 0, 1) forwards;
+  }
+  @keyframes slideUpSheet {
+    from { transform: translateY(100%); opacity: 0.6; }
+    to   { transform: translateY(0);    opacity: 1;   }
+  }
+
+  /* ── Formulaire ─── */
+  .modal-header {
+    padding: var(--space-md);
+  }
+  .l-modal-form {
+    padding: var(--space-md);
+    gap: var(--space-md);
+  }
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: var(--space-md);
+  }
+  .form-input {
+    font-size: 16px; /* empêche le zoom auto iOS */
+  }
+  .modal-footer {
+    padding-top: var(--space-md);
+  }
+
+  /* ── ACI picker : position fixe ─── */
+  .aci-picker {
+    position: fixed;
+    bottom: var(--space-lg);
+    right: var(--space-md);
+    left: var(--space-md);
+    width: auto;
+    top: auto;
+    z-index: 200;
+    grid-template-columns: repeat(5, 1fr);
+  }
+
+  /* ── Welcome popup ─── */
+  #welcome-popup {
+    padding: var(--space-md);
+  }
+  #welcome-popup .modal-content {
+    max-width: 100%;
+  }
+
+  /* ── Tap targets (min 44px) ─── */
+  .btn-icon {
+    width: 44px;
+    height: 44px;
+  }
+
+  /* ── Footer ─── */
+  .footer-link .icon {
+    width: 22px;
+    height: 22px;
+  }
+
+  /* ── Scrollbar réduite ─── */
+  ::-webkit-scrollbar {
+    width: 3px;
+    height: 3px;
+  }
+}
+
+/* ── Très petits écrans (≤ 380px) ────────────────────────────────────── */
+@media (max-width: 380px) {
+  .l-header {
+    flex-wrap: wrap;
+  }
+  .header-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
 }
